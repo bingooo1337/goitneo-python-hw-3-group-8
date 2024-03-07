@@ -66,6 +66,13 @@ def add_contact(args, book: AddressBook):
     return "Contact added."
 
 
+@input_error
+def delete_contact(args, book: AddressBook):
+    name = args[0]
+    book.delete(name)
+    return "Contact deleted."
+
+
 @change_contact_error
 def change_contact(args, book: AddressBook):
     name, old_phone, new_phone = args
@@ -143,6 +150,8 @@ def main():
             print("How can I help you?")
         elif command == "add":
             print(add_contact(args, book))
+        elif command == "delete":
+            print(delete_contact(args, book))
         elif command == "change":
             print(change_contact(args, book))
         elif command == "add-birthday":
