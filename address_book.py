@@ -60,6 +60,9 @@ class Birthday(Field):
     def __init__(self, value):
         super().__init__(value)
 
+    def __str__(self):
+        return self.value.strftime(Birthday.date_format)
+
 
 class Record:
     def __init__(self, name):
@@ -74,13 +77,15 @@ class Record:
         self.phones = [p for p in self.phones if p.value != phone]
 
     def edit_phone(self, old_phone, new_phone):
+        old = Phone(old_phone)
         for i, phone in enumerate(self.phones):
-            if (phone.value == old_phone):
+            if (phone.value == old.value):
                 self.phones[i] = Phone(new_phone)
 
     def find_phone(self, phone):
+        find = Phone(phone)
         for p in self.phones:
-            if (p.value == phone):
+            if (p.value == find.value):
                 return p
         return None
 
@@ -88,7 +93,11 @@ class Record:
         self.birthday = Birthday(birthday)
 
     def __str__(self):
-        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
+        res = f"Contact name: {self.name.value}, phones: {
+            '; '.join(p.value for p in self.phones)}"
+        if (self.birthday != None):
+            res += f", birthday {self.birthday}"
+        return res
 
 
 class AddressBook(UserDict):
@@ -96,13 +105,13 @@ class AddressBook(UserDict):
         self.data[record.name.value] = record
 
     def find(self, name):
-        return self.data[name]
+        return self.data.get(name, None)
 
     def delete(self, name):
         del self.data[name]
 
     def get_birthdays_per_week(self):
-        users_to_congratulate_by_days = self.get_users_to_congratulate(
+        users_to_congratulate_by_days = self._get_users_to_congratulate(
             self.data.values()
         )
 
@@ -112,7 +121,7 @@ class AddressBook(UserDict):
 
         return '\n'.join(lines)
 
-    def get_users_to_congratulate(self, users: list[Record]):
+    def _get_users_to_congratulate(self, users: list[Record]):
         start = datetime.now().date()
         end = (start + timedelta(days=6))
 
