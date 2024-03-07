@@ -1,4 +1,5 @@
 from collections import UserDict
+import datetime
 
 
 class Field:
@@ -33,10 +34,38 @@ class Phone(Field):
         super().__init__(value)
 
 
+class InvalidBirthDateFormatException(Exception):
+    def __init__(self):
+        super().__init__("Birthday should have format DD.MM.YYYY")
+
+
+def birthday_validator(func):
+    def inner(*args, **kwargs):
+        updated_args = list(args)
+        try:
+            updated_args[1] = datetime.datetime.strptime(
+                args[1],
+                Birthday.date_format,
+            )
+        except ValueError:
+            raise InvalidBirthDateFormatException
+        return func(*updated_args, **kwargs)
+    return inner
+
+
+class Birthday(Field):
+    date_format = "%d.%m.%Y"
+
+    @birthday_validator
+    def __init__(self, value):
+        super().__init__(value)
+
+
 class Record:
     def __init__(self, name):
         self.name = Name(name)
         self.phones = []
+        self.birthday = None
 
     def add_phone(self, phone):
         self.phones.append(Phone(phone))
@@ -54,6 +83,9 @@ class Record:
             if (p.value == phone):
                 return p
         return None
+
+    def add_birthday(self, birthday):
+        self.birthday = Birthday(birthday)
 
     def __str__(self):
         return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
@@ -85,6 +117,7 @@ def main():
     # Створення та додавання нового запису для Jane
     jane_record = Record("Jane")
     jane_record.add_phone("9876543210")
+    jane_record.add_birthday("15.4.1990")
     book.add_record(jane_record)
 
     # Виведення всіх записів у книзі
