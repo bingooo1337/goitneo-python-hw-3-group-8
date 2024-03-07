@@ -1,3 +1,5 @@
+import json
+import pickle
 from address_book import AddressBook, InvalidBirthDateFormatException, InvalidPhoneException, Record
 
 
@@ -110,14 +112,31 @@ def birthdays(book: AddressBook):
         return book.get_birthdays_per_week()
 
 
+def load_from_file():
+    try:
+        with open('address_book.pkl', 'rb') as f:
+            book = pickle.load(f)
+    except:
+        book = AddressBook()
+
+    return book
+
+
+def save_to_file(book):
+    with open('address_book.pkl', 'wb') as f:
+        pickle.dump(book, f)
+
+
 def main():
-    book = AddressBook()
+    book = load_from_file()
+
     print("Welcome to the assistant bot!")
     while True:
         user_input = input("Enter a command: ")
         command, *args = parse_input(user_input)
 
         if command in ["close", "exit"]:
+            save_to_file(book)
             print("Good bye!")
             break
         elif command == "hello":
