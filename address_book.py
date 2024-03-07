@@ -1,5 +1,5 @@
-from collections import UserDict
-import datetime
+from collections import UserDict, defaultdict
+from datetime import datetime, timedelta
 
 
 class Field:
@@ -43,7 +43,7 @@ def birthday_validator(func):
     def inner(*args, **kwargs):
         updated_args = list(args)
         try:
-            updated_args[1] = datetime.datetime.strptime(
+            updated_args[1] = datetime.strptime(
                 args[1],
                 Birthday.date_format,
             )
@@ -101,6 +101,57 @@ class AddressBook(UserDict):
     def delete(self, name):
         del self.data[name]
 
+    def get_birthdays_per_week(self):
+        users_to_congratulate_by_days = self.get_users_to_congratulate(
+            self.data.values()
+        )
+
+        lines = []
+        for day in sorted(users_to_congratulate_by_days.items()):
+            lines.append(f'{day[0].strftime("%A")}: {", ".join(day[1])}')
+
+        return '\n'.join(lines)
+
+    def get_users_to_congratulate(self, users: list[Record]):
+        start = datetime.now().date()
+        end = (start + timedelta(days=6))
+
+        users_to_congratulate = defaultdict(list)
+        for user in users:
+            if (user.birthday == None):
+                continue
+
+            congratulation_day = self._get_congratulation_day(
+                start,
+                user.birthday.value.date()
+            )
+
+            if (start <= congratulation_day and congratulation_day <= end):
+                users_to_congratulate[congratulation_day].append(
+                    user.name.value
+                )
+
+        return users_to_congratulate
+
+    def _get_congratulation_day(self, today, birthday):
+        birthday_this_year = birthday.replace(year=today.year)
+
+        congratulation_day = birthday_this_year
+
+        # birthday will be next year
+        if (birthday_this_year < today):
+            congratulation_day = birthday_this_year.replace(
+                year=today.year + 1)
+
+        weekday = congratulation_day.weekday()
+        # 4 - Friday index
+        if (weekday > 4):
+            # birthday is on weekend, congratulation on next work day
+            congratulation_day = congratulation_day + \
+                timedelta(days=7 - weekday)
+
+        return congratulation_day
+
 
 def main():
     # Створення нової адресної книги
@@ -110,6 +161,7 @@ def main():
     john_record = Record("John")
     john_record.add_phone("1234567890")
     john_record.add_phone("5555555555")
+    john_record.add_birthday("12.3.2000")
 
     # Додавання запису John до адресної книги
     book.add_record(john_record)
@@ -117,7 +169,7 @@ def main():
     # Створення та додавання нового запису для Jane
     jane_record = Record("Jane")
     jane_record.add_phone("9876543210")
-    jane_record.add_birthday("15.4.1990")
+    jane_record.add_birthday("10.3.1990")
     book.add_record(jane_record)
 
     # Виведення всіх записів у книзі
@@ -133,6 +185,8 @@ def main():
     # Пошук конкретного телефону у записі John
     found_phone = john.find_phone("5555555555")
     print(f"{john.name}: {found_phone}")  # Виведення: 5555555555
+
+    print(book.get_birthdays_per_week())
 
     # Видалення запису Jane
     book.delete("Jane")
